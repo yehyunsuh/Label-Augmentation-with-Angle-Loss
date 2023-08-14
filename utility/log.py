@@ -11,7 +11,7 @@ def initiate_wandb(args):
 
 
 def log_results(
-    loss, loss_pixel, loss_geom, loss_noma,
+    loss, loss_pixel, loss_geom,
     dice, rmse_mean, best_rmse_mean, rmse_list, 
     train_loader_len, val_loader_len
     ):
@@ -28,7 +28,6 @@ def log_results(
         'Train Loss': loss/train_loader_len,
         'Pixel Loss': loss_pixel/train_loader_len,
         'Geometric Loss': loss_geom/train_loader_len,
-        'No Marker Loss': loss_noma,
         # 'Angle Loss':,
         'Dice Score': dice,
         'Mean RMSE': rmse_mean,
@@ -41,18 +40,18 @@ def log_results(
         'Label5': rmse_by_label[5],
         'Label6': rmse_by_label[6],
         'Label7': rmse_by_label[7],
-        'Label8': rmse_by_label[8],
-        'Label9': rmse_by_label[9],
-        'Label10': rmse_by_label[10],
-        'Label11': rmse_by_label[11],
-        'Label12': rmse_by_label[12],
-        'Label13': rmse_by_label[13],
-        'Label14': rmse_by_label[14],
-        'Label15': rmse_by_label[15],
-        'Label16': rmse_by_label[16],
-        'Label17': rmse_by_label[17],
-        'Label18': rmse_by_label[18],
-        'Label19': rmse_by_label[19],
+        # 'Label8': rmse_by_label[8],
+        # 'Label9': rmse_by_label[9],
+        # 'Label10': rmse_by_label[10],
+        # 'Label11': rmse_by_label[11],
+        # 'Label12': rmse_by_label[12],
+        # 'Label13': rmse_by_label[13],
+        # 'Label14': rmse_by_label[14],
+        # 'Label15': rmse_by_label[15],
+        # 'Label16': rmse_by_label[16],
+        # 'Label17': rmse_by_label[17],
+        # 'Label18': rmse_by_label[18],
+        # 'Label19': rmse_by_label[19],
     })
 
 
