@@ -144,8 +144,8 @@ def extract_pixel(args, prediction):
     index_list = []
     for i in range(len(prediction)):
         tmp_list = []
-        for i in range(args.output_channel):
-            index = (prediction[0][i] == torch.max(prediction[0][i])).nonzero()
+        for j in range(args.output_channel):
+            index = (prediction[0][j] == torch.max(prediction[0][j])).nonzero()
             if len(index) > 1:
                 index = torch.Tensor([[sum(index)[0]/len(index), sum(index)[1]/len(index)]])
             tmp_list.append([index[0].detach().cpu()[0].item(), index[0].detach().cpu()[1].item()])
