@@ -156,23 +156,24 @@ def extract_pixel(args, prediction):
     return index_list
 
 
-def rmse(args, highest_probability_pixels, label_list, idx, rmse_list):
-    highest_probability_pixels = torch.Tensor(np.array(highest_probability_pixels)).squeeze(0).reshape(args.output_channel*2,1)
+def rmse(args, prediction, label_list, idx, rmse_list):
+    index_list = extract_pixel(args, prediction)
+    index_list = torch.Tensor(np.array(index_list)).squeeze(0).reshape(args.output_channel*2,1)
     label_list_reshape = np.array(torch.Tensor(label_list), dtype=object).reshape(args.output_channel*2,1)
     label_list_reshape = np.ndarray.tolist(label_list_reshape)
 
     ## squared=False for RMSE values
-    # rmse_value = mse(highest_probability_pixels, label_list_reshape, squared=False) 
+    # rmse_value = mse(index_list, label_list_reshape, squared=False) 
     for i in range(args.output_channel):
         y = int(label_list[2*i])
         x = int(label_list[2*i+1])
 
         if y != 0 and x != 0:
-            rmse_list[i][idx] = mse(highest_probability_pixels[2*i:2*(i+1)], label_list_reshape[2*i:2*(i+1)], squared=False)
+            rmse_list[i][idx] = mse(index_list[2*i:2*(i+1)], label_list_reshape[2*i:2*(i+1)], squared=False)
         else:
             rmse_list[i][idx] = -1
 
-    return rmse_list
+    return rmse_list, extract_pixel(args, prediction)
 
 
 def calculate_angle(coordinates):
@@ -214,7 +215,7 @@ def geom_element(prediction_sigmoid, label):
     return predict_spatial_mean, label_spatial_mean
 
 
-def angle_element(args, prediction, label_list, DEVICE):
+def angle_element(args, prediction, label_list, DEVICE, train_type):
     index_list = extract_pixel(args, prediction)
     label_sorted_list = []
     for i in range(len(label_list[0])):
@@ -235,4 +236,24 @@ def angle_element(args, prediction, label_list, DEVICE):
             angle_preds.append(calculate_angle(coord_preds))
             angle_label.append(calculate_angle(coord_label))
 
-    return torch.Tensor(angle_preds).requires_grad_().to(device=DEVICE), torch.Tensor(angle_label).to(device=DEVICE)
+    if train_type == 'train':
+        return torch.Tensor(angle_preds).requires_grad_().to(device=DEVICE), torch.Tensor(angle_label).to(device=DEVICE)
+    else:
+        return angle_preds, angle_label
+
+
+def dist_element(args, prediction, label_list, DEVICE):
+    index_list = extract_pixel(args, prediction)
+    label_sorted_list = []
+    for i in range(len(label_list[0])):
+        tmp_list = []
+        for j in range(0,len(label_list),2):
+            tmp_list.append([label_list[j][i].item(), label_list[j+1][i].item()])
+        label_sorted_list.append(tmp_list)
+    
+    for i in range(len(label_sorted_list)):
+        for j in range(len(label_sorted_list[i])):
+            if label_sorted_list[i][j] == [0,0]:
+                index_list[i][j] = [0, 0]
+
+    return torch.Tensor(index_list).requires_grad_().to(device=DEVICE), torch.Tensor(label_sorted_list).to(device=DEVICE)

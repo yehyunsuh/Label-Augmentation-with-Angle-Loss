@@ -44,6 +44,7 @@ if __name__ == '__main__':
     parser.add_argument('--no_visualization', action='store_true', help='whether to save image or not')
     parser.add_argument('--geom_loss', action='store_true')
     parser.add_argument('--angle_loss', action='store_true')
+    parser.add_argument('--dist_loss', action='store_true')
     parser.add_argument('--test', action='store_true')
 
     ## get dataset
@@ -82,6 +83,7 @@ if __name__ == '__main__':
     parser.add_argument('--pixel_loss_weight', type=float, default=1, help='weight of the loss function')
     parser.add_argument('--geom_loss_weight', type=float, default=1, help='weight of the loss function')
     parser.add_argument('--angle_loss_weight', type=float, default=1, help='weight of the loss function')
+    parser.add_argument('--dist_loss_weight', type=float, default=1, help='weight of the loss function')
     parser.add_argument("--label_for_angle", type=arg_as_list, default=[[0,1,3],[4,6,7],[0,3,7]], help='model decoder channels')
 
     ## hyperparameters - results
