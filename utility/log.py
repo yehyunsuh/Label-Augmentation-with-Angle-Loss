@@ -11,8 +11,8 @@ def initiate_wandb(args):
 
 
 def log_results(
-    loss, loss_pixel, loss_geom,
-    dice, rmse_mean, best_rmse_mean, rmse_list, 
+    loss, loss_pixel, loss_geom, loss_angle,
+    dice, rmse_mean, best_rmse_mean, rmse_list,
     train_loader_len, val_loader_len
     ):
     rmse_by_label = []
@@ -28,7 +28,8 @@ def log_results(
         'Train Loss': loss/train_loader_len,
         'Pixel Loss': loss_pixel/train_loader_len,
         'Geometric Loss': loss_geom/train_loader_len,
-        # 'Angle Loss':,
+        'Angle Loss': loss_angle/train_loader_len,
+        # 'Best Mean Angle': best_angle_mean,
         'Dice Score': dice,
         'Mean RMSE': rmse_mean,
         'Best Mean RMSE': best_rmse_mean,

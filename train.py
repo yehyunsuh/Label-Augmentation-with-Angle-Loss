@@ -6,28 +6,36 @@ import pprint
 
 from tqdm import tqdm
 from utility.log import log_results, log_terminal
-from utility.train import set_parameters, extract_pixel, rmse, geom_element, dist_element
+from utility.train import set_parameters, extract_pixel, rmse, geom_element, angle_element
 from utility.visualization import visualize
 
-def train_function(args, DEVICE, model, loss_fn_pixel, loss_fn_geometry, loss_fn_dist, optimizer, train_loader):
-    total_loss, total_pixel_loss, total_geom_loss, total_dist_loss = 0, 0, 0, 0
-    total_num_noma, total_num_pred_noma = 0, 0
+def train_function(args, DEVICE, model, loss_fn_pixel, loss_fn_geometry, loss_fn_angle, optimizer, train_loader):
+    total_loss, total_pixel_loss, total_geom_loss, total_angle_loss = 0, 0, 0, 0
     model.train()
 
     for image, label, _, _, label_list in tqdm(train_loader):
         image = image.to(device=DEVICE)
         label = label.float().to(device=DEVICE)
         
+        # Pixel Loss
         prediction = model(image)
         loss_pixel = loss_fn_pixel(prediction, label)
 
-        ## Geometry Loss
+        # Geometry Loss
         predict_spatial_mean, label_spatial_mean = geom_element(torch.sigmoid(prediction), label)
         loss_geometry = loss_fn_geometry(predict_spatial_mean, label_spatial_mean)
 
-        ## Total Loss
-        if args.geom_loss:
-            loss = loss_pixel + args.geom_loss_weight * loss_geometry
+        # Angle Loss
+        predict_angle, label_angle = angle_element(args, prediction, label_list, DEVICE)
+        loss_angle = loss_fn_angle(predict_angle, label_angle)
+
+        # Total Loss
+        if args.geom_loss and args.angle_loss:
+            loss = args.pixel_loss_weight * loss_pixel + args.geom_loss_weight * loss_geometry + args.angle_loss_weight * loss_angle
+        elif args.geom_loss and not args.angle_loss:
+            loss = args.pixel_loss_weight * loss_pixel + args.geom_loss_weight * loss_geometry
+        elif not args.geom_loss and args.angle_loss:
+            loss = args.pixel_loss_weight * loss_pixel + args.angle_loss_weight * loss_angle
         else:
             loss = loss_pixel
 
@@ -38,8 +46,9 @@ def train_function(args, DEVICE, model, loss_fn_pixel, loss_fn_geometry, loss_fn
         total_loss          += loss.item()
         total_pixel_loss    += loss_pixel.item() 
         total_geom_loss     += loss_geometry.item()
+        total_angle_loss    += loss_angle.item()
 
-    return total_loss, total_pixel_loss, total_geom_loss
+    return total_loss, total_pixel_loss, total_geom_loss, total_angle_loss
 
 
 def validate_function(args, DEVICE, model, epoch, val_loader):
@@ -102,8 +111,8 @@ def validate_function(args, DEVICE, model, epoch, val_loader):
 
 
 def train(args, model, DEVICE):
-    best_loss, best_rmse_mean = np.inf, np.inf
-    loss_fn_geometry, loss_fn_dist = nn.MSELoss(), nn.MSELoss()
+    best_loss, best_rmse_mean, best_angle_mean = np.inf, np.inf, np.inf
+    loss_fn_geometry, loss_fn_angle = nn.MSELoss(), nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     
     for epoch in range(args.epochs):
@@ -114,8 +123,8 @@ def train(args, model, DEVICE):
                 args, model, epoch, DEVICE
             )
 
-        loss, loss_pixel, loss_geom = train_function(
-            args, DEVICE, model, loss_fn_pixel, loss_fn_geometry, loss_fn_dist, optimizer, train_loader
+        loss, loss_pixel, loss_geom, loss_angle = train_function(
+            args, DEVICE, model, loss_fn_pixel, loss_fn_geometry, loss_fn_angle, optimizer, train_loader
         )
         dice, rmse_mean, rmse_list = validate_function(
             args, DEVICE, model, epoch, val_loader
@@ -133,11 +142,19 @@ def train(args, model, DEVICE):
             }
             # torch.save(checkpoint, f'./results/{args.wandb_name}/best.pth')
             best_rmse_mean = rmse_mean
+        
+        # if best_angle_mean > angle_mean:
+        #     checkpoint = {
+        #         "state_dict": model.state_dict(),
+        #         "optimizer":  optimizer.state_dict(),
+        #     }
+        #     # torch.save(checkpoint, f'./results/{args.wandb_name}/best.pth')
+        #     best_angle_mean = angle_mean
 
         if args.wandb:              
             log_results(
-                loss, loss_pixel, loss_geom,
-                dice, rmse_mean, best_rmse_mean, rmse_list, 
+                loss, loss_pixel, loss_geom, loss_angle,
+                dice, rmse_mean, best_rmse_mean, rmse_list,
                 len(train_loader), len(val_loader)
             )
     log_terminal(args, rmse_list)

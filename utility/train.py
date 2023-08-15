@@ -2,6 +2,7 @@ import os
 import torch
 import torch.nn as nn
 import numpy as np
+import math
 
 from sklearn.metrics import mean_squared_error as mse
 from dataset import load_data
@@ -174,6 +175,30 @@ def rmse(args, highest_probability_pixels, label_list, idx, rmse_list):
     return rmse_list
 
 
+def calculate_angle(coordinates):
+    y1, x1 = coordinates[0], coordinates[1]
+    y2, x2 = coordinates[2], coordinates[3]
+    y3, x3 = coordinates[4], coordinates[5]
+
+    numerator = y3 - y2
+    denominator = x3 - x2
+    if denominator == 0:
+        denominator = 1e-8
+    theta1 = math.degrees(math.atan(numerator/denominator))
+
+    numerator = y1 - y2
+    denominator = x1 - x2
+    if denominator == 0:
+        denominator = 1e-8
+    theta2 = math.degrees(math.atan(numerator/denominator))
+    theta = abs(theta2 - theta1)
+
+    if theta > 90:
+        return 180 - theta
+    else:
+        return theta
+
+
 def geom_element(prediction_sigmoid, label):
     predict_spatial_mean_function = SpatialMean_CHAN(list(prediction_sigmoid.shape[1:]))
     predict_spatial_mean          = predict_spatial_mean_function(prediction_sigmoid)
@@ -189,7 +214,7 @@ def geom_element(prediction_sigmoid, label):
     return predict_spatial_mean, label_spatial_mean
 
 
-def dist_element(args, prediction, label_list):
+def angle_element(args, prediction, label_list, DEVICE):
     index_list = extract_pixel(args, prediction)
     label_sorted_list = []
     for i in range(len(label_list[0])):
@@ -197,10 +222,17 @@ def dist_element(args, prediction, label_list):
         for j in range(0,len(label_list),2):
             tmp_list.append([label_list[j][i].item(), label_list[j+1][i].item()])
         label_sorted_list.append(tmp_list)
-    
-    for i in range(len(label_sorted_list)):
-        for j in range(len(label_sorted_list[i])):
-            if label_sorted_list[i][j] == [0,0]:
-                index_list[i][j] = [0, 0]
 
-    return torch.Tensor(index_list).requires_grad_(), torch.Tensor(label_sorted_list)
+    angle_preds, angle_label = [], []
+    for i in range(len(index_list)):
+        for j in range(len(args.label_for_angle)):
+            coord_preds, coord_label = [], []
+            for k in range(len(args.label_for_angle[j])):
+                coord_preds.append(index_list[i][args.label_for_angle[j][k]][0])
+                coord_preds.append(index_list[i][args.label_for_angle[j][k]][1])
+                coord_label.append(label_sorted_list[i][args.label_for_angle[j][k]][0])
+                coord_label.append(label_sorted_list[i][args.label_for_angle[j][k]][1])
+            angle_preds.append(calculate_angle(coord_preds))
+            angle_label.append(calculate_angle(coord_label))
+
+    return torch.Tensor(angle_preds).requires_grad_().to(device=DEVICE), torch.Tensor(angle_label).to(device=DEVICE)
