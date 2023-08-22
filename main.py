@@ -42,9 +42,6 @@ if __name__ == '__main__':
     ## boolean arguments
     parser.add_argument('--preprocess', action='store_true')
     parser.add_argument('--no_visualization', action='store_true', help='whether to save image or not')
-    parser.add_argument('--geom_loss', action='store_true')
-    parser.add_argument('--angle_loss', action='store_true')
-    parser.add_argument('--dist_loss', action='store_true')
     parser.add_argument('--test', action='store_true')
 
     ## get dataset
@@ -81,9 +78,6 @@ if __name__ == '__main__':
     parser.add_argument('--lr', '--learning_rate', type=float, default=1e-4, help='learning rate')
     parser.add_argument('--epochs', type=int, default=350, help='number of epochs')
     parser.add_argument('--pixel_loss_weight', type=float, default=1, help='weight of the loss function')
-    parser.add_argument('--geom_loss_weight', type=float, default=1, help='weight of the loss function')
-    parser.add_argument('--angle_loss_weight', type=float, default=1, help='weight of the loss function')
-    parser.add_argument('--dist_loss_weight', type=float, default=1, help='weight of the loss function')
     parser.add_argument("--label_for_angle", type=arg_as_list, default=[[0,1,3],[4,6,7],[0,3,7]], help='model decoder channels')
 
     ## hyperparameters - results
@@ -97,5 +91,4 @@ if __name__ == '__main__':
     parser.add_argument('--wandb_name', type=str, default="baseline", help='wandb name')
 
     args = parser.parse_args()
-
     main(args)

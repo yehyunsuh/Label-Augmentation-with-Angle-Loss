@@ -107,11 +107,6 @@ def create_directories(args):
         os.mkdir(f'{args.result_directory}/{args.wandb_name}/label')
     if not os.path.exists(f'{args.result_directory}/{args.wandb_name}/pred_w_gt'):
         os.mkdir(f'{args.result_directory}/{args.wandb_name}/pred_w_gt')
-    # if not os.path.exists(f'{args.result_directory}/{args.wandb_name}/heatmap'):
-    #     os.mkdir(f'{args.result_directory}/{args.wandb_name}/heatmap')
-    # for i in range(args.output_channel):
-    #     if not os.path.exists(f'{args.result_directory}/{args.wandb_name}/heatmap/label{i}'):
-    #         os.mkdir(f'{args.result_directory}/{args.wandb_name}/heatmap/label{i}')
 
 
 def calculate_number_of_dilated_pixel(k):
@@ -215,7 +210,7 @@ def geom_element(prediction_sigmoid, label):
     return predict_spatial_mean, label_spatial_mean
 
 
-def angle_element(args, prediction, label_list, DEVICE, train_type):
+def angle_element(args, prediction, label_list, DEVICE):
     index_list = extract_pixel(args, prediction)
     label_sorted_list = []
     for i in range(len(label_list[0])):
@@ -236,24 +231,4 @@ def angle_element(args, prediction, label_list, DEVICE, train_type):
             angle_preds.append(calculate_angle(coord_preds))
             angle_label.append(calculate_angle(coord_label))
 
-    if train_type == 'train':
-        return torch.Tensor(angle_preds).requires_grad_().to(device=DEVICE), torch.Tensor(angle_label).to(device=DEVICE)
-    else:
-        return angle_preds, angle_label
-
-
-def dist_element(args, prediction, label_list, DEVICE):
-    index_list = extract_pixel(args, prediction)
-    label_sorted_list = []
-    for i in range(len(label_list[0])):
-        tmp_list = []
-        for j in range(0,len(label_list),2):
-            tmp_list.append([label_list[j][i].item(), label_list[j+1][i].item()])
-        label_sorted_list.append(tmp_list)
-    
-    for i in range(len(label_sorted_list)):
-        for j in range(len(label_sorted_list[i])):
-            if label_sorted_list[i][j] == [0,0]:
-                index_list[i][j] = [0, 0]
-
-    return torch.Tensor(index_list).requires_grad_().to(device=DEVICE), torch.Tensor(label_sorted_list).to(device=DEVICE)
+    return angle_preds, angle_label
